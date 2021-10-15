@@ -45,15 +45,15 @@ int main(int argc, char *argv[])
     if (myid == numprocs-1) next = MPI_PROC_NULL;
     else next = myid+1;
 
-    if (myid%2==0){
-        MPI_Send(&n,1,MPI_INT,next,0,MPI_COMM_WORLD);
-        MPI_Recv(&n,1,MPI_INT,prev,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    if (!myid){
+        MPI_Send(&n,1,MPI_INT,1,0,MPI_COMM_WORLD);
     }
     else{
-        int temp;
-        MPI_Recv(&temp, 1, MPI_INT,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-        MPI_Send(&n,1,MPI_INT,next,0,MPI_COMM_WORLD);
-        n = temp;
+        for (int i=1;i<numprocs;i++){
+            MPI_Recv(&n,1,MPI_INT,i-1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(&n,1,MPI_INT,i+1,0,MPI_COMM_WORLD);
+
+        }
     }
     //MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
