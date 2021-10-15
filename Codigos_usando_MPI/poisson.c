@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 
   sol = (double*)calloc((N+2)*(M+2),sizeof(double));
   if (!rank){
-    next = rank + 1;
+    int next = rank + 1;
     for (i=1; i<size; i++){
       MPI_Recv(&sol[(next*n+1)*ld],n*M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
       next++;
