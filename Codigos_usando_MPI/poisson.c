@@ -1,10 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "mpi.h"
-
-
-
 
 /*
  * Un paso del método de Jacobi para la ecuación de Poisson
@@ -17,7 +13,7 @@
  *   Se asume que x,b,t son de dimensión (N+2)*(M+2), se recorren solo los puntos interiores
  *   de la malla, y en los bordes están almacenadas las condiciones de frontera (por defecto 0).
  */
-void jacobi_step(int N,int M,double *x,double *b,double *t, int ld)
+void jacobi_step(int N,int M,double *x,double *b,double *t)
 {
   int i, j, ld=M+2;
   for (i=1; i<=N; i++) {
@@ -83,54 +79,43 @@ void jacobi_poisson(int N,int M,double *x,double *b)
 
 int main(int argc, char **argv)
 {
-  int k,p;
-  MPI_Init(&argc, argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &k);
-  MPI_Comm_size(MPI_COMM_WORLD, &p);
-  int i, j, N=40, M=50, ld;
+  int i, j, N=50, M=50, ld;
   double *x, *b, h=0.01, f=1.5;
-
-  
 
   /* Extracción de argumentos */
   if (argc > 1) { /* El usuario ha indicado el valor de N */
-    if ((N = atoi(argv[1])) < 0) N = 40;
+    if ((N = atoi(argv[1])) < 0) N = 50;
   }
   if (argc > 2) { /* El usuario ha indicado el valor de M */
     if ((M = atoi(argv[2])) < 0) M = 1;
   }
   ld = M+2;  /* leading dimension */
 
-  int n = N/p;
   /* Reserva de memoria */
-  x = (double*)calloc((n+2)*(M+2),sizeof(double));
-  b = (double*)calloc((n+2)*(M+2),sizeof(double));
-  t = (double*)calloc((n+2)*(M+2),sizeof(double));
+  x = (double*)calloc((N+2)*(M+2),sizeof(double));
+  b = (double*)calloc((N+2)*(M+2),sizeof(double));
 
   /* Inicializar datos */
-  for (i=1; i<=n; i++) {
+  for (i=1; i<=N; i++) {
     for (j=1; j<=M; j++) {
       b[i*ld+j] = h*h*f;  /* suponemos que la función f es constante en todo el dominio */
     }
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  //jacobi_poisson(N,M,x,b);
-  jacobi_step(n, M, x, b, t, ld);
+  jacobi_poisson(N,M,x,b);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
-
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        printf("%g ", x[i*ld+j]);
-      }
-      printf("\n");
+  for (i=1; i<=N; i++) {
+    for (j=1; j<=M; j++) {
+      printf("%g ", x[i*ld+j]);
     }
+    printf("\n");
+  }
 
   free(x);
   free(b);
-  free(t);
-  MPI_Finalize();
+
   return 0;
 }
 
