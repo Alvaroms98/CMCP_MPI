@@ -14,7 +14,7 @@
  *   Se asume que x,b,t son de dimensión (N+2)*(M+2), se recorren solo los puntos interiores
  *   de la malla, y en los bordes están almacenadas las condiciones de frontera (por defecto 0).
  */
-void jacobi_step(int N,int M,double *x,double *b,double *t)
+void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
 {
   int i, j, ld=M+2;
   int next, prev;
@@ -26,18 +26,18 @@ void jacobi_step(int N,int M,double *x,double *b,double *t)
   else next = rank+1;
 
   if (!rank){
-    MPI_Send(x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
   }
   else if(rank == size-1){
-    MPI_Recv(x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
   else if (rank%2 == 0){
-    MPI_Send(x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Recv(x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
   else{
-    MPI_Recv(x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Send(x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
   }
  
   for (i=1; i<=N; i++) {
@@ -104,11 +104,11 @@ void jacobi_poisson(int N,int M,double *x,double *b)
 int main(int argc, char **argv)
 {
   int i, j, N=40, M=50, ld;
-  double *x, *b, h=0.01, f=1.5;
-  static int rank, size;
+  double *x, *b, *t, *sol, h=0.01, f=1.5;
+  int rank, size;
 
 
-  MPI_Init(&argc, argv);
+  MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_step(n, M, x, b, t);
+  jacobi_step(n, M, x, b, t, rank, size);
   //jacobi_poisson(N,M,x,b);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
   if (!rank){
     next = rank + 1;
     for (i=1; i<size; i++){
-      MPI_Recv(sol[(next*n+1)*ld],n*M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+      MPI_Recv(&sol[(next*n+1)*ld],n*M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
       next++;
     }
     for (i=1; i<=n; i++) {
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     }
   }
   else{
-    MPI_Send(t[ld],n*M,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+    MPI_Send(&t[ld],n*M,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
   }
 
   if (!rank){
