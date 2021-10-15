@@ -151,12 +151,12 @@ int main(int argc, char **argv)
     }
     for (i=1; i<=n; i++) {
       for (j=1; j<=M; j++) {
-        sol[i*ld+j] = x[i*ld+j];
+        sol[i*ld+j] = t[i*ld+j];
       }
     }
   }
   else{
-    MPI_Send(x[ld],n*M,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+    MPI_Send(t[ld],n*M,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
   }
 
   if (!rank){
