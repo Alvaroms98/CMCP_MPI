@@ -63,43 +63,43 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
  *   Suponemos que las condiciones de contorno son igual a 0 en toda la
  *   frontera del dominio.
  */
-void jacobi_poisson(int N,int M,double *x,double *b)
-{
-  int i, j, k, ld=M+2, conv, maxit=10000;
-  double *t, s, tol=1e-6;
+// void jacobi_poisson(int N,int M,double *x,double *b)
+// {
+//   int i, j, k, ld=M+2, conv, maxit=10000;
+//   double *t, s, tol=1e-6;
 
-  t = (double*)calloc((N+2)*(M+2),sizeof(double));
+//   t = (double*)calloc((N+2)*(M+2),sizeof(double));
 
-  k = 0;
-  conv = 0;
+//   k = 0;
+//   conv = 0;
 
-  while (!conv && k<maxit) {
+//   while (!conv && k<maxit) {
 
-    /* calcula siguiente vector */
-    //jacobi_step(N,M,x,b,t);
+//     /* calcula siguiente vector */
+//     //jacobi_step(N,M,x,b,t);
 
-    /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
-    s = 0.0;
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
-      }
-    }
-    conv = (sqrt(s)<tol);
-    printf("Error en iteración %d: %g\n", k, sqrt(s));
+//     /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
+//     s = 0.0;
+//     for (i=1; i<=N; i++) {
+//       for (j=1; j<=M; j++) {
+//         s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
+//       }
+//     }
+//     conv = (sqrt(s)<tol);
+//     printf("Error en iteración %d: %g\n", k, sqrt(s));
 
-    /* siguiente iteración */
-    k = k+1;
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        x[i*ld+j] = t[i*ld+j];
-      }
-    }
+//     /* siguiente iteración */
+//     k = k+1;
+//     for (i=1; i<=N; i++) {
+//       for (j=1; j<=M; j++) {
+//         x[i*ld+j] = t[i*ld+j];
+//       }
+//     }
 
-  }
+//   }
 
-  free(t);
-}
+//   free(t);
+// }
 
 int main(int argc, char **argv)
 {
