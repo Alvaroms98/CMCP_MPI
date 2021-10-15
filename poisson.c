@@ -39,52 +39,52 @@ void jacobi_step(int N,int M,double *x,double *b,double *t)
  *   Suponemos que las condiciones de contorno son igual a 0 en toda la
  *   frontera del dominio.
  */
-void jacobi_poisson(int N,int M,double *x,double *b)
-{
-  int i, j, k, ld=M+2, conv, maxit=10000;
-  double *t, s, tol=1e-6;
+// void jacobi_poisson(int N,int M,double *x,double *b)
+// {
+//   int i, j, k, ld=M+2, conv, maxit=10000;
+//   double *t, s, tol=1e-6;
 
-  t = (double*)calloc((N+2)*(M+2),sizeof(double));
+//   t = (double*)calloc((N+2)*(M+2),sizeof(double));
 
-  k = 0;
-  conv = 0;
+//   k = 0;
+//   conv = 0;
 
-  while (!conv && k<maxit) {
+//   while (!conv && k<maxit) {
 
-    /* calcula siguiente vector */
-    jacobi_step(N,M,x,b,t);
+//     /* calcula siguiente vector */
+//     jacobi_step(N,M,x,b,t);
 
-    /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
-    s = 0.0;
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
-      }
-    }
-    conv = (sqrt(s)<tol);
-    printf("Error en iteración %d: %g\n", k, sqrt(s));
+//     /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
+//     s = 0.0;
+//     for (i=1; i<=N; i++) {
+//       for (j=1; j<=M; j++) {
+//         s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
+//       }
+//     }
+//     conv = (sqrt(s)<tol);
+//     printf("Error en iteración %d: %g\n", k, sqrt(s));
 
-    /* siguiente iteración */
-    k = k+1;
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        x[i*ld+j] = t[i*ld+j];
-      }
-    }
+//     /* siguiente iteración */
+//     k = k+1;
+//     for (i=1; i<=N; i++) {
+//       for (j=1; j<=M; j++) {
+//         x[i*ld+j] = t[i*ld+j];
+//       }
+//     }
 
-  }
+//   }
 
-  free(t);
-}
+//   free(t);
+// }
 
 int main(int argc, char **argv)
 {
-  int i, j, N=50, M=50, ld;
-  double *x, *b, h=0.01, f=1.5;
+  int i, j, N=40, M=50, ld;
+  double *x, *b, *t, h=0.01, f=1.5;
 
   /* Extracción de argumentos */
   if (argc > 1) { /* El usuario ha indicado el valor de N */
-    if ((N = atoi(argv[1])) < 0) N = 50;
+    if ((N = atoi(argv[1])) < 0) N = 40;
   }
   if (argc > 2) { /* El usuario ha indicado el valor de M */
     if ((M = atoi(argv[2])) < 0) M = 1;
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   /* Reserva de memoria */
   x = (double*)calloc((N+2)*(M+2),sizeof(double));
   b = (double*)calloc((N+2)*(M+2),sizeof(double));
-
+  t = (double*)calloc((N+2)*(M+2),sizeof(double));
   /* Inicializar datos */
   for (i=1; i<=N; i++) {
     for (j=1; j<=M; j++) {
@@ -103,12 +103,12 @@ int main(int argc, char **argv)
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_poisson(N,M,x,b);
+  jacobi_step(N,M,x,b,t);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
   for (i=1; i<=N; i++) {
     for (j=1; j<=M; j++) {
-      printf("%g ", x[i*ld+j]);
+      printf("%g ", t[i*ld+j]);
     }
     printf("\n");
   }
