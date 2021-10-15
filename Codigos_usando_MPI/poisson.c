@@ -76,7 +76,7 @@ void jacobi_poisson(int N,int M,double *x,double *b)
   while (!conv && k<maxit) {
 
     /* calcula siguiente vector */
-    jacobi_step(N,M,x,b,t);
+    //jacobi_step(N,M,x,b,t);
 
     /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
     s = 0.0;
