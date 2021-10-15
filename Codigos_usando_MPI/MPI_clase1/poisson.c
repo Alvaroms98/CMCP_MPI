@@ -33,11 +33,17 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
   }
   else if (rank%2 == 0){
     MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Send(&x[1*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
     MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&x[(N+1)*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
   else{
     MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&x[(N+1)*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Send(&x[1*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
+    
+
   }
  
   for (i=1; i<=N; i++) {
@@ -146,7 +152,7 @@ int main(int argc, char **argv)
   if (!rank){
     int next = rank + 1;
     for (i=1; i<size; i++){
-      MPI_Recv(&sol[(next*n+1)*ld],n*M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+      MPI_Recv(&sol[(next*n+1)*ld],n*ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
       next++;
     }
     for (i=1; i<=n; i++) {
@@ -156,7 +162,7 @@ int main(int argc, char **argv)
     }
   }
   else{
-    MPI_Send(&t[ld],n*M,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+    MPI_Send(&t[ld],n*ld,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
   }
 
   if (!rank){
