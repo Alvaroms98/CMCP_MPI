@@ -14,6 +14,8 @@
  *   Se asume que x,b,t son de dimensión (N+2)*(M+2), se recorren solo los puntos interiores
  *   de la malla, y en los bordes están almacenadas las condiciones de frontera (por defecto 0).
  */
+
+
 void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
 {
   int i, j, ld=M+2;
@@ -27,11 +29,14 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
 
   if (!rank){
     MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Recv(&x[(N+1)*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
   else if(rank == size-1){
     MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Send(&x[1*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
   }
   else if (rank%2 == 0){
+    //Los pares envían primero al siguiente y al anterior, y luego, reciben del anterior y del siguiente
     MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
     MPI_Send(&x[1*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
     MPI_Recv(&x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -42,8 +47,6 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
     MPI_Recv(&x[(N+1)*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     MPI_Send(&x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
     MPI_Send(&x[1*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
-    
-
   }
  
   for (i=1; i<=N; i++) {
