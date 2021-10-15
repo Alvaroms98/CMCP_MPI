@@ -50,9 +50,13 @@ int main(int argc, char *argv[])
     }
     else{
         for (int i=1;i<numprocs;i++){
-            MPI_Recv(&n,1,MPI_INT,i-1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Send(&n,1,MPI_INT,i+1,0,MPI_COMM_WORLD);
-
+            if (myid==numprocs-1){
+                MPI_Recv(&n,1,MPI_INT,i-1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+            else{
+                MPI_Recv(&n,1,MPI_INT,i-1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Send(&n,1,MPI_INT,i+1,0,MPI_COMM_WORLD);
+            }
         }
     }
     //MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
