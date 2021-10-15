@@ -32,11 +32,30 @@ int main(int argc, char *argv[])
     fprintf(stdout, "Process %d of %d is on %s\n", myid, numprocs, processor_name);
     fflush(stdout);
 
-    n = 10000;  /* default # of rectangles */
-    if (myid == 0)
-        startwtime = MPI_Wtime();
 
-    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (myid == 0){
+        startwtime = MPI_Wtime();
+        n = 10000;  /* default # of rectangles */
+    }
+
+    // Difusión de la variable "n" punto a punto (pares-impares)
+    int prev, next;
+    if (!myid) prev = MPI_PROC_NULL;
+    else prev = myid-1;
+    if (myid == numprocs-1) next = MPI_PROC_NULL;
+    else next = myid+1;
+
+    if (myid%2==0){
+        MPI_Send(&n,1,MPI_INT,next,0,MPI_COMM_WORLD);
+        MPI_Recv(&n,1,MPI_INT,prev,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    else{
+        int temp;
+        MPI_Recv(&temp, 1, MPI_INT,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        MPI_Send(&n,1,MPI_INT,next,0,MPI_COMM_WORLD);
+        n = temp;
+    }
+    //MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     h = 1.0 / (double) n;
     sum = 0.0;
