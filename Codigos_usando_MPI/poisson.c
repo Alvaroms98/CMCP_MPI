@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "mpi.h"
 
 /*
  * Un paso del método de Jacobi para la ecuación de Poisson
@@ -16,6 +17,29 @@
 void jacobi_step(int N,int M,double *x,double *b,double *t)
 {
   int i, j, ld=M+2;
+  int next, prev;
+
+  // Definición de emisores y receptores para comunicación pares-impares
+  if (!rank) prev = MPI_PROC_NULL;
+  else prev = rank-1;
+  if (rank == size-1) next = MPI_PROC_NULL;
+  else next = rank+1;
+
+  if (!rank){
+    MPI_Send(x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+  }
+  else if(rank == size-1){
+    MPI_Recv(x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+  }
+  else if (rank%2 == 0){
+    MPI_Send(x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Recv(x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+  }
+  else{
+    MPI_Recv(x[0*ld+1],M,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Send(x[N*ld+1],M,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+  }
+ 
   for (i=1; i<=N; i++) {
     for (j=1; j<=M; j++) {
       t[i*ld+j] = (b[i*ld+j] + x[(i+1)*ld+j] + x[(i-1)*ld+j] + x[i*ld+(j+1)] + x[i*ld+(j-1)])/4.0;
@@ -79,43 +103,78 @@ void jacobi_poisson(int N,int M,double *x,double *b)
 
 int main(int argc, char **argv)
 {
-  int i, j, N=50, M=50, ld;
+  int i, j, N=40, M=50, ld;
   double *x, *b, h=0.01, f=1.5;
+  static int rank, size;
+
+
+  MPI_Init(&argc, argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
 
   /* Extracción de argumentos */
   if (argc > 1) { /* El usuario ha indicado el valor de N */
-    if ((N = atoi(argv[1])) < 0) N = 50;
+    if ((N = atoi(argv[1])) < 0) N = 40;
   }
   if (argc > 2) { /* El usuario ha indicado el valor de M */
     if ((M = atoi(argv[2])) < 0) M = 1;
   }
   ld = M+2;  /* leading dimension */
 
+  int n = N / size;
+
   /* Reserva de memoria */
-  x = (double*)calloc((N+2)*(M+2),sizeof(double));
-  b = (double*)calloc((N+2)*(M+2),sizeof(double));
+  x = (double*)calloc((n+2)*(M+2),sizeof(double));
+  b = (double*)calloc((n+2)*(M+2),sizeof(double));
+  t = (double*)calloc((n+2)*(M+2),sizeof(double));
 
   /* Inicializar datos */
-  for (i=1; i<=N; i++) {
+  for (i=1; i<=n; i++) {
     for (j=1; j<=M; j++) {
       b[i*ld+j] = h*h*f;  /* suponemos que la función f es constante en todo el dominio */
     }
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_poisson(N,M,x,b);
+  jacobi_step(n, M, x, b, t);
+  //jacobi_poisson(N,M,x,b);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
-  for (i=1; i<=N; i++) {
-    for (j=1; j<=M; j++) {
-      printf("%g ", x[i*ld+j]);
+
+  sol = (double*)calloc((N+2)*(M+2),sizeof(double));
+  if (!rank){
+    next = rank + 1;
+    for (i=1; i<size; i++){
+      MPI_Recv(sol[(next*n+1)*ld],n*M,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+      next++;
     }
-    printf("\n");
+    for (i=1; i<=n; i++) {
+      for (j=1; j<=M; j++) {
+        sol[i*ld+j] = x[i*ld+j];
+      }
+    }
   }
+  else{
+    MPI_Send(x[ld],n*M,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  }
+
+  if (!rank){
+    for (i=1; i<=N; i++) {
+      for (j=1; j<=M; j++) {
+        printf("%g ", sol[i*ld+j]);
+      }
+      printf("\n");
+    }
+  }
+  
 
   free(x);
   free(b);
+  free(t);
+  free(sol);
 
+  MPI_Finalize();
   return 0;
 }
 
