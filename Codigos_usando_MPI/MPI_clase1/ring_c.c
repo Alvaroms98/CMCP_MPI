@@ -31,8 +31,9 @@ int main(int argc, char *argv[])
        put the number of times to go around the ring in the
        message. */
     
+    MPI_Barrier(MPI_COMM_WORLD);
+    double t1 = MPI_Wtime();
     if (0 == rank) {
-        double t1 = MPI_Wtime();
         message = 10;
 
         printf("Process 0 sending %d to %d, tag %d (%d processes in ring)\n",
