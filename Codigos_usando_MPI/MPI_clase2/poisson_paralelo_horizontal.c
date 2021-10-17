@@ -118,7 +118,7 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
 
 int main(int argc, char **argv)
 {
-  int i, j, N=40, M=50, ld;
+  int i, j, N=40, M=40, ld;
   double *x, *b, *sol, h=0.01, f=1.5;
   int rank, size;
 
@@ -137,21 +137,21 @@ int main(int argc, char **argv)
   }
   ld = M+2;  /* leading dimension */
 
-  int n = N / size;
+  int m = M / size;
 
   /* Reserva de memoria */
-  x = (double*)calloc((n+2)*(M+2),sizeof(double));
-  b = (double*)calloc((n+2)*(M+2),sizeof(double));
+  x = (double*)calloc((N+2)*(m+2),sizeof(double));
+  b = (double*)calloc((N+2)*(m+2),sizeof(double));
 
   /* Inicializar datos */
-  for (i=1; i<=n; i++) {
-    for (j=1; j<=M; j++) {
+  for (i=1; i<=N; i++) {
+    for (j=1; j<=m; j++) {
       b[i*ld+j] = h*h*f;  /* suponemos que la función f es constante en todo el dominio */
     }
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_poisson(n,M,x,b,rank,size);
+  jacobi_poisson(N,m,x,b,rank,size);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
 
@@ -159,6 +159,7 @@ int main(int argc, char **argv)
 
   /* Comunicación colectiva para pasar la solución al máster */
   MPI_Gather( &x[ld] , n*ld , MPI_DOUBLE , sol , n*ld , MPI_DOUBLE , 0 , MPI_COMM_WORLD);
+
 
   if (!rank){
     for (i=0; i<N; i++) {
@@ -177,4 +178,3 @@ int main(int argc, char **argv)
   MPI_Finalize();
   return 0;
 }
-
