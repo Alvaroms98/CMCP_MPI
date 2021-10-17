@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   sol = (double*)calloc((N)*(M+2),sizeof(double));
 
   /* Comunicación colectiva para pasar la solución al máster */
-  MPI_Gather( &x[ld] , n*ld , MPI_DOUBLE , &sol , n*ld , MPI_DOUBLE , 0 , MPI_COMM_WORLD);
+  MPI_Gather( &x[ld] , n*ld , MPI_DOUBLE , sol , n*ld , MPI_DOUBLE , 0 , MPI_COMM_WORLD);
 
   // if (!rank){
   //   int next = rank + 1;
