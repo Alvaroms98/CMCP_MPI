@@ -72,48 +72,48 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
  *   Suponemos que las condiciones de contorno son igual a 0 en toda la
  *   frontera del dominio.
  */
-// void jacobi_poisson(int N,int M,double *x,double *b)
-// {
-//   int i, j, k, ld=M+2, conv, maxit=10000;
-//   double *t, s, tol=1e-6;
+void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
+{
+  int i, j, k, ld=M+2, conv, maxit=10000;
+  double *t, s, tol=1e-6;
 
-//   t = (double*)calloc((N+2)*(M+2),sizeof(double));
+  t = (double*)calloc((N+2)*(M+2),sizeof(double));
 
-//   k = 0;
-//   conv = 0;
+  k = 0;
+  conv = 0;
 
-//   while (!conv && k<maxit) {
+  while (!conv && k<maxit) {
 
-//     /* calcula siguiente vector */
-//     //jacobi_step(N,M,x,b,t);
+    /* calcula siguiente vector */
+    jacobi_step(N,M,x,b,t,rank,size);
 
-//     /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
-//     s = 0.0;
-//     for (i=1; i<=N; i++) {
-//       for (j=1; j<=M; j++) {
-//         s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
-//       }
-//     }
-//     conv = (sqrt(s)<tol);
-//     printf("Error en iteración %d: %g\n", k, sqrt(s));
+    /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
+    s = 0.0;
+    for (i=1; i<=N; i++) {
+      for (j=1; j<=M; j++) {
+        s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
+      }
+    }
+    conv = (sqrt(s)<tol);
+    printf("[Núcleo %d] Error en iteración %d: %g\n", rank, k, sqrt(s));
 
-//     /* siguiente iteración */
-//     k = k+1;
-//     for (i=1; i<=N; i++) {
-//       for (j=1; j<=M; j++) {
-//         x[i*ld+j] = t[i*ld+j];
-//       }
-//     }
+    /* siguiente iteración */
+    k = k+1;
+    for (i=1; i<=N; i++) {
+      for (j=1; j<=M; j++) {
+        x[i*ld+j] = t[i*ld+j];
+      }
+    }
 
-//   }
+  }
 
-//   free(t);
-// }
+  free(t);
+}
 
 int main(int argc, char **argv)
 {
   int i, j, N=40, M=50, ld;
-  double *x, *b, *t, *sol, h=0.01, f=1.5;
+  double *x, *b, *sol, h=0.01, f=1.5;
   int rank, size;
 
 
@@ -136,7 +136,6 @@ int main(int argc, char **argv)
   /* Reserva de memoria */
   x = (double*)calloc((n+2)*(M+2),sizeof(double));
   b = (double*)calloc((n+2)*(M+2),sizeof(double));
-  t = (double*)calloc((n+2)*(M+2),sizeof(double));
 
   /* Inicializar datos */
   for (i=1; i<=n; i++) {
@@ -146,8 +145,7 @@ int main(int argc, char **argv)
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_step(n, M, x, b, t, rank, size);
-  //jacobi_poisson(N,M,x,b);
+  jacobi_poisson(N,M,x,b,rank,size);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
 
@@ -160,12 +158,12 @@ int main(int argc, char **argv)
     }
     for (i=1; i<=n; i++) {
       for (j=1; j<=M; j++) {
-        sol[i*ld+j] = t[i*ld+j];
+        sol[i*ld+j] = x[i*ld+j];
       }
     }
   }
   else{
-    MPI_Send(&t[ld],n*ld,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+    MPI_Send(&x[ld],n*ld,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
   }
 
   if (!rank){
@@ -180,7 +178,6 @@ int main(int argc, char **argv)
 
   free(x);
   free(b);
-  free(t);
   free(sol);
 
   MPI_Finalize();

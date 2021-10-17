@@ -4,4 +4,4 @@
 #SBATCH --time=5:00
 #SBATCH --partition=mcpd
 
-mpiexec ./ring
+mpiexec ./poisson_completo
