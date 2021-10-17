@@ -95,10 +95,6 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
       }
     }
 
-    if (rank==1){
-      printf("Soy el rank 1 antes de la sincronización\n");
-    }
-
     MPI_Allreduce(&local_s, &total_s, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     conv = (sqrt(total_s)<tol);
@@ -159,25 +155,30 @@ int main(int argc, char **argv)
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
 
-  sol = (double*)calloc((N+2)*(M+2),sizeof(double));
-  if (!rank){
-    int next = rank + 1;
-    for (i=1; i<size; i++){
-      MPI_Recv(&sol[(next*n+1)*ld],n*ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-      next++;
-    }
-    for (i=1; i<=n; i++) {
-      for (j=1; j<=M; j++) {
-        sol[i*ld+j] = x[i*ld+j];
-      }
-    }
-  }
-  else{
-    MPI_Send(&x[ld],n*ld,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
-  }
+  sol = (double*)calloc((N)*(M+2),sizeof(double));
+
+  /* Comunicación colectiva para pasar la solución al máster */
+  MPI_Gather( &x[ld] , n*ld , MPI_DOUBLE , &sol , int n*ld , MPI_DOUBLE , 0 , MPI_COMM_WORLD);
+
+
+  // if (!rank){
+  //   int next = rank + 1;
+  //   for (i=1; i<size; i++){
+  //     MPI_Recv(&sol[(next*n+1)*ld],n*ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+  //     next++;
+  //   }
+  //   for (i=1; i<=n; i++) {
+  //     for (j=1; j<=M; j++) {
+  //       sol[i*ld+j] = x[i*ld+j];
+  //     }
+  //   }
+  // }
+  // else{
+  //   MPI_Send(&x[ld],n*ld,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  // }
 
   if (!rank){
-    for (i=1; i<=N; i++) {
+    for (i=0; i<N; i++) {
       for (j=1; j<=M; j++) {
         printf("%g ", sol[i*ld+j]);
       }
