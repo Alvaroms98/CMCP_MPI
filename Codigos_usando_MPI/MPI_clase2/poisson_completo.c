@@ -94,6 +94,7 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
         local_s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
       }
     }
+    printf("Antes de la sincronización MPI_Allreduce");
 
     MPI_Allreduce(&local_s, &total_s, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
