@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
     /* If we are the "master" process (i.e., MPI_COMM_WORLD rank 0),
        put the number of times to go around the ring in the
        message. */
-    MPI_Barrier(MPI_COMM_WORLD);
-    double t1 = MPI_Wtime();
+    
     if (0 == rank) {
+        double t1 = MPI_Wtime();
         message = 10;
 
         printf("Process 0 sending %d to %d, tag %d (%d processes in ring)\n",
@@ -71,12 +71,9 @@ int main(int argc, char *argv[])
     if (0 == rank) {
         MPI_Recv(&message, 1, MPI_INT, prev, tag, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-    double t2 = MPI_Wtime();
-
-    if (!rank){
+        double t2 = MPI_Wtime();
         printf("Tiempo de cálculo: %f s.\n", t2-t1);
+
     }
     
     /* All done */
