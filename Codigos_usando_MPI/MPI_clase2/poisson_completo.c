@@ -74,7 +74,7 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
  */
 void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
 {
-  int i, j, k, ld=M+2, conv, maxit=100;
+  int i, j, k, ld=M+2, conv, maxit=10000;
   double *t, local_s, total_s, tol=1e-6;
 
   t = (double*)calloc((N+2)*(M+2),sizeof(double));
@@ -94,7 +94,6 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
         local_s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
       }
     }
-    printf("Antes de la sincronización MPI_Allreduce");
 
     MPI_Allreduce(&local_s, &total_s, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
