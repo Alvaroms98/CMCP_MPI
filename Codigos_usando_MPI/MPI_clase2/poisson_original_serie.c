@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "mpi.h"
 
 /*
  * Un paso del método de Jacobi para la ecuación de Poisson
@@ -14,41 +13,9 @@
  *   Se asume que x,b,t son de dimensión (N+2)*(M+2), se recorren solo los puntos interiores
  *   de la malla, y en los bordes están almacenadas las condiciones de frontera (por defecto 0).
  */
-
-
-void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
+void jacobi_step(int N,int M,double *x,double *b,double *t)
 {
   int i, j, ld=M+2;
-  int next, prev;
-
-  // Definición de emisores y receptores para comunicación pares-impares
-  if (!rank) prev = MPI_PROC_NULL;
-  else prev = rank-1;
-  if (rank == size-1) next = MPI_PROC_NULL;
-  else next = rank+1;
-
-  if (!rank){
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-  }
-  else if(rank == size-1){
-    MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
-  }
-  else if (rank%2 == 0){
-    //Los pares envían primero al siguiente y al anterior, y luego, reciben del anterior y del siguiente
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
-    MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-  }
-  else{
-    MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
-  }
- 
   for (i=1; i<=N; i++) {
     for (j=1; j<=M; j++) {
       t[i*ld+j] = (b[i*ld+j] + x[(i+1)*ld+j] + x[(i-1)*ld+j] + x[i*ld+(j+1)] + x[i*ld+(j-1)])/4.0;
@@ -72,7 +39,7 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
  *   Suponemos que las condiciones de contorno son igual a 0 en toda la
  *   frontera del dominio.
  */
-void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
+void jacobi_poisson(int N,int M,double *x,double *b)
 {
   int i, j, k, ld=M+2, conv, maxit=10000;
   double *t, s, tol=1e-6;
@@ -85,7 +52,7 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
   while (!conv && k<maxit) {
 
     /* calcula siguiente vector */
-    jacobi_step(N,M,x,b,t,rank,size);
+    jacobi_step(N,M,x,b,t);
 
     /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
     s = 0.0;
@@ -95,7 +62,7 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
       }
     }
     conv = (sqrt(s)<tol);
-    printf("[Núcleo %d] Error en iteración %d: %g\n", rank, k, sqrt(s));
+    printf("Error en iteración %d: %g\n", k, sqrt(s));
 
     /* siguiente iteración */
     k = k+1;
@@ -113,14 +80,7 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
 int main(int argc, char **argv)
 {
   int i, j, N=40, M=50, ld;
-  double *x, *b, *sol, h=0.01, f=1.5;
-  int rank, size;
-
-
-  MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+  double *x, *b, h=0.01, f=1.5;
 
   /* Extracción de argumentos */
   if (argc > 1) { /* El usuario ha indicado el valor de N */
@@ -131,56 +91,31 @@ int main(int argc, char **argv)
   }
   ld = M+2;  /* leading dimension */
 
-  int n = N / size;
-
   /* Reserva de memoria */
-  x = (double*)calloc((n+2)*(M+2),sizeof(double));
-  b = (double*)calloc((n+2)*(M+2),sizeof(double));
+  x = (double*)calloc((N+2)*(M+2),sizeof(double));
+  b = (double*)calloc((N+2)*(M+2),sizeof(double));
 
   /* Inicializar datos */
-  for (i=1; i<=n; i++) {
+  for (i=1; i<=N; i++) {
     for (j=1; j<=M; j++) {
       b[i*ld+j] = h*h*f;  /* suponemos que la función f es constante en todo el dominio */
     }
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_poisson(N,M,x,b,rank,size);
+  jacobi_poisson(N,M,x,b);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
-
-  sol = (double*)calloc((N+2)*(M+2),sizeof(double));
-  if (!rank){
-    int next = rank + 1;
-    for (i=1; i<size; i++){
-      MPI_Recv(&sol[(next*n+1)*ld],n*ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-      next++;
+  for (i=1; i<=N; i++) {
+    for (j=1; j<=M; j++) {
+      printf("%g ", x[i*ld+j]);
     }
-    for (i=1; i<=n; i++) {
-      for (j=1; j<=M; j++) {
-        sol[i*ld+j] = x[i*ld+j];
-      }
-    }
+    printf("\n");
   }
-  else{
-    MPI_Send(&x[ld],n*ld,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
-  }
-
-  if (!rank){
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        printf("%g ", sol[i*ld+j]);
-      }
-      printf("\n");
-    }
-  }
-  
 
   free(x);
   free(b);
-  free(sol);
 
-  MPI_Finalize();
   return 0;
 }
 
