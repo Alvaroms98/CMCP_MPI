@@ -95,6 +95,10 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
       }
     }
 
+    if (rank==1){
+      printf("Soy el rank 1 antes de la sincronización\n");
+    }
+
     MPI_Allreduce(&local_s, &total_s, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     conv = (sqrt(total_s)<tol);
