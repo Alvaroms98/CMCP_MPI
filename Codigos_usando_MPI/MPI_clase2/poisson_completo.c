@@ -75,7 +75,7 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
 void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
 {
   int i, j, k, ld=M+2, conv, maxit=10000;
-  double *t, s, tol=1e-6;
+  double *t, local_s, total_s, tol=1e-6;
 
   t = (double*)calloc((N+2)*(M+2),sizeof(double));
 
@@ -88,14 +88,20 @@ void jacobi_poisson(int N,int M,double *x,double *b, int rank, int size)
     jacobi_step(N,M,x,b,t,rank,size);
 
     /* criterio de parada: ||x_{k}-x_{k+1}||<tol */
-    s = 0.0;
+    local_s = 0.0;
     for (i=1; i<=N; i++) {
       for (j=1; j<=M; j++) {
-        s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
+        local_s += (x[i*ld+j]-t[i*ld+j])*(x[i*ld+j]-t[i*ld+j]);
       }
     }
-    conv = (sqrt(s)<tol);
-    printf("[Núcleo %d] Error en iteración %d: %g\n", rank, k, sqrt(s));
+
+    MPI_Allreduce(&local_s, &total_s, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    conv = (sqrt(total_s)<tol);
+
+    if (!rank){
+      printf("Error en iteración %d: %g\n", k, sqrt(total_s));
+    }
 
     /* siguiente iteración */
     k = k+1;
