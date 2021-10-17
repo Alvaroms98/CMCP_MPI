@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   }
 
   /* Resolución del sistema por el método de Jacobi */
-  jacobi_poisson(N,M,x,b,rank,size);
+  jacobi_poisson(n,M,x,b,rank,size);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
 
