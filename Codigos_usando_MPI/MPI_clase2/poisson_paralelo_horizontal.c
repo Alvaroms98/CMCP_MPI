@@ -160,8 +160,8 @@ int main(int argc, char **argv)
   /* Creamos el tipo de dato: columna_resized, para poder resetear la posición del puntero */
 
   MPI_Datatype columna_resized;
-  MPI_Type_create_resized( columna , 0 , sizeof(double) , columna_resized);
-  MPI_Type_commit( columna_resized);
+  MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
+  MPI_Type_commit( &columna_resized);
 
   sol = (double*)calloc((N+2)*(M),sizeof(double));
 
