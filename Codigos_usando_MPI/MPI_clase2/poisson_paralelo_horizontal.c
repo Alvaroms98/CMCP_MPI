@@ -28,7 +28,7 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
   else next = rank+1;
 
   MPI_Datatype columna;
-  MPI_Type_vector( N , 1 , ld , MPI_DOUBLE , &columna);
+  MPI_Type_vector( N+2 , 1 , ld , MPI_DOUBLE , &columna);
   MPI_Type_commit( &columna);
 
   if (rank%2 == 0){
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
   /* Creamos el tipo de dato: columna */
 
   MPI_Datatype columna;
-  MPI_Type_vector( N , 1 , ld , MPI_DOUBLE , &columna);
+  MPI_Type_vector( N+2 , 1 , ld , MPI_DOUBLE , &columna);
   MPI_Type_commit( &columna);
 
   /* Resolución del sistema por el método de Jacobi */
@@ -163,14 +163,14 @@ int main(int argc, char **argv)
   MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
   MPI_Type_commit( &columna_resized);
 
-  sol = (double*)calloc((N)*(M),sizeof(double));
+  sol = (double*)calloc((N+2)*(M),sizeof(double));
 
   /* Comunicación colectiva para pasar la solución al máster */
   MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
 
   ld = M + 2;
   if (!rank){
-    for (i=0; i<N; i++) {
+    for (i=1; i<=N; i++) {
       for (j=0; j<M; j++) {
         printf("%g ", sol[i*ld+j]);
       }
