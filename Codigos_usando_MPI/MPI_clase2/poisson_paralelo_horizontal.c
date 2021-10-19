@@ -27,26 +27,17 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
   if (rank == size-1) next = MPI_PROC_NULL;
   else next = rank+1;
 
-  if (!rank){
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-  }
-  else if(rank == size-1){
-    MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
-  }
-  else if (rank%2 == 0){
-    //Los pares envían primero al siguiente y al anterior, y luego, reciben del anterior y del siguiente
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
-    MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+  if (rank%2 == 0){
+    MPI_Send(&x[0*ld+M],1,columna,next,0,MPI_COMM_WORLD);
+    MPI_Send(&x[0*ld+1],1,columna,prev,0,MPI_COMM_WORLD);
+    MPI_Recv(&x[0*ld+0],1,columna,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&x[0*ld+M+1],1,columna,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
   else{
-    MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
+    MPI_Recv(&x[0*ld+0],1,columna,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&x[0*ld+M+1],1,columna,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Send(&x[0*ld+M],1,columna,next,0,MPI_COMM_WORLD);
+    MPI_Send(&x[0*ld+1],1,columna,prev,0,MPI_COMM_WORLD);
   }
  
   for (i=1; i<=N; i++) {
@@ -135,9 +126,10 @@ int main(int argc, char **argv)
   if (argc > 2) { /* El usuario ha indicado el valor de M */
     if ((M = atoi(argv[2])) < 0) M = 1;
   }
-  ld = M+2;  /* leading dimension */
-
+  
   int m = M / size;
+
+  ld = m+2;  /* leading dimension */
 
   /* Reserva de memoria */
   x = (double*)calloc((N+2)*(m+2),sizeof(double));
@@ -150,16 +142,27 @@ int main(int argc, char **argv)
     }
   }
 
+  /* Creamos el tipo de dato: columna */
+
+  MPI_Datatype columna;
+  MPI_Type_vector( N , 1 , ld , MPI_DOUBLE , &columna);
+  MPI_Type_commit( &columna);
+
   /* Resolución del sistema por el método de Jacobi */
   jacobi_poisson(N,m,x,b,rank,size);
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
 
-  sol = (double*)calloc((N)*(M+2),sizeof(double));
+  /* Creamos el tipo de dato: columna_resized, para poder resetear la posición del puntero */
+
+  MPI_Datatype columna_resized;
+  MPI_Type_create_resized( columna , 0 , sizeof(double) , columna_resized);
+  MPI_Type_commit( columna_resized);
+
+  sol = (double*)calloc((N+2)*(M),sizeof(double));
 
   /* Comunicación colectiva para pasar la solución al máster */
-  MPI_Gather( &x[ld] , n*ld , MPI_DOUBLE , sol , n*ld , MPI_DOUBLE , 0 , MPI_COMM_WORLD);
-
+  MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
 
   if (!rank){
     for (i=0; i<N; i++) {
