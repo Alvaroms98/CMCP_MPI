@@ -158,25 +158,38 @@ int main(int argc, char **argv)
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
 
   /* Creamos el tipo de dato: columna_resized, para poder resetear la posición del puntero */
+  int next = 0;
+  for (i=0;i<size;i++){
 
-  MPI_Datatype columna_resized;
-  MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
-  MPI_Type_commit( &columna_resized);
+    if (rank==next){
+      for (i=1; i<=N; i++) {
+        for (j=1; j<=m; j++) {
+          printf("%g ", x[i*ld+j]);
+        }
+        printf("\n");
+      }
+    }
+    next += 1;
+  }
+
+  // MPI_Datatype columna_resized;
+  // MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
+  // MPI_Type_commit( &columna_resized);
 
   sol = (double*)calloc((N+2)*(M),sizeof(double));
 
-  /* Comunicación colectiva para pasar la solución al máster */
-  MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
+  // /* Comunicación colectiva para pasar la solución al máster */
+  // MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
 
-  ld = M + 2;
-  if (!rank){
-    for (i=1; i<=N; i++) {
-      for (j=0; j<M; j++) {
-        printf("%g ", sol[i*ld+j]);
-      }
-      printf("\n");
-    }
-  }
+  // ld = M + 2;
+  // if (!rank){
+  //   for (i=1; i<=N; i++) {
+  //     for (j=0; j<M; j++) {
+  //       printf("%g ", sol[i*ld+j]);
+  //     }
+  //     printf("\n");
+  //   }
+  // }
   
 
   free(x);
