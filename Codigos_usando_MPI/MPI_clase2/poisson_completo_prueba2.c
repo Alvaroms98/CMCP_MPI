@@ -29,16 +29,16 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
 
   if (rank%2 == 0){
     //Los pares envían primero al siguiente y al anterior, y luego, reciben del anterior y del siguiente
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
+    MPI_Ssend(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Ssend(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
     MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
   else{
     MPI_Recv(&x[0*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     MPI_Recv(&x[(N+1)*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    MPI_Send(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
-    MPI_Send(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
+    MPI_Ssend(&x[N*ld],ld,MPI_DOUBLE,next,0,MPI_COMM_WORLD);
+    MPI_Ssend(&x[1*ld],ld,MPI_DOUBLE,prev,0,MPI_COMM_WORLD);
   }
  
   for (i=1; i<=N; i++) {
