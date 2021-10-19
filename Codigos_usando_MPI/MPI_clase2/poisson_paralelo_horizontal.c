@@ -27,6 +27,10 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, int rank, int size)
   if (rank == size-1) next = MPI_PROC_NULL;
   else next = rank+1;
 
+  MPI_Datatype columna;
+  MPI_Type_vector( N , 1 , ld , MPI_DOUBLE , &columna);
+  MPI_Type_commit( &columna);
+
   if (rank%2 == 0){
     MPI_Send(&x[0*ld+M],1,columna,next,0,MPI_COMM_WORLD);
     MPI_Send(&x[0*ld+1],1,columna,prev,0,MPI_COMM_WORLD);
@@ -164,6 +168,7 @@ int main(int argc, char **argv)
   /* Comunicación colectiva para pasar la solución al máster */
   MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
 
+  ld = M + 2;
   if (!rank){
     for (i=0; i<N; i++) {
       for (j=1; j<=M; j++) {
