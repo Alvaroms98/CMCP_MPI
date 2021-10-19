@@ -163,7 +163,7 @@ int main(int argc, char **argv)
   MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
   MPI_Type_commit( &columna_resized);
 
-  sol = (double*)calloc((N+2)*(M),sizeof(double));
+  sol = (double*)calloc((N)*(M),sizeof(double));
 
   /* Comunicación colectiva para pasar la solución al máster */
   MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
   ld = M + 2;
   if (!rank){
     for (i=0; i<N; i++) {
-      for (j=1; j<=M; j++) {
+      for (j=0; j<M; j++) {
         printf("%g ", sol[i*ld+j]);
       }
       printf("\n");
