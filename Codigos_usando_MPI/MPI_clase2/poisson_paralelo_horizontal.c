@@ -163,12 +163,21 @@ int main(int argc, char **argv)
   MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
   MPI_Type_commit( &columna_resized);
 
+  /* Dato columna para la recepción de la solución: El "stride es M, no m+2" */
+  MPI_Datatype columna_sol;
+  MPI_Type_vector( N+2, 1, M, MPI_DOUBLE, &columna_sol);
+  MPI_Type_commit( &columna_sol);
+
+  MPI_Datatype columna_sol_resized;
+  MPI_Type_create_resized( columna_sol , 0 , sizeof(double) , &columna_sol_resized);
+  MPI_Type_commit( &columna_sol_resized);
+
   sol = (double*)calloc((N+2)*(M),sizeof(double));
 
   // /* Comunicación colectiva para pasar la solución al máster */
-  MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_resized , 0 , MPI_COMM_WORLD);
+  MPI_Gather( &x[0*ld+1] , m , columna_resized , sol , m , columna_sol_resized , 0 , MPI_COMM_WORLD);
 
-  ld = M + 2;
+  ld = M;
   if (!rank){
     for (i=1; i<=N; i++) {
       for (j=0; j<M; j++) {
