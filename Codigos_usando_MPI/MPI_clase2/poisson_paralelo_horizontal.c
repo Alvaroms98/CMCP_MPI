@@ -187,7 +187,10 @@ int main(int argc, char **argv)
     }
   }
   
-
+  MPI_Type_free( &columna);
+  MPI_Type_free( &columna_resized);
+  MPI_Type_free( &columna_sol);
+  MPI_Type_free( &columna_sol_resized);
   free(x);
   free(b);
   free(sol);
