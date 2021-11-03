@@ -25,8 +25,8 @@ void jacobi_step(int N,int M,double *x,double *b,double *t, MPI_Comm *comm_cart)
   enum DIRS {DOWN, UP, LEFT, RIGHT};
   int neighbours_ranks[4];
 
-  MPI_Cart_shift( *comm_cart , 0 , 1 , &neighbours_ranks[LEFT] , &neigthbours_ranks[RIGHT]);
-  MPI_Cart_shift( *comm_cart , 1 , 1 , &neighbours_ranks[DOWN] , &neigthbours_ranks[UP]);
+  MPI_Cart_shift( *comm_cart , 0 , 1 , &neighbours_ranks[LEFT] , &neighbours_ranks[RIGHT]);
+  MPI_Cart_shift( *comm_cart , 1 , 1 , &neighbours_ranks[DOWN] , &neighbours_ranks[UP]);
 
   // Creamos el tipo para cuando mandemos columnas a la derecha e izquierda
   MPI_Datatype columna;
@@ -95,6 +95,9 @@ void jacobi_poisson(int N,int M,double *x,double *b, MPI_Comm * comm_cart)
   k = 0;
   conv = 0;
 
+  int rank;
+  MPI_Comm_rank(*comm_cart, &rank);
+
   while (!conv && k<maxit) {
 
     /* calcula siguiente vector */
@@ -109,10 +112,10 @@ void jacobi_poisson(int N,int M,double *x,double *b, MPI_Comm * comm_cart)
     }
 
     MPI_Allreduce( &local_s , &total_s , 1 , MPI_DOUBLE , MPI_SUM , *comm_cart);
-    conv = (sqrt(s)<tol);
+    conv = (sqrt(total_s)<tol);
 
     if (!rank){
-      printf("Error en iteración %d: %g\n", k, sqrt(s));
+      printf("Error en iteración %d: %g\n", k, sqrt(total_s));
     }
 
     /* siguiente iteración */
@@ -180,7 +183,7 @@ int main(int argc, char **argv)
 
   /* Recogida de la soliución en máster */
   int rank;
-  MPI_Comm_rank(*comm_cart, &rank);
+  MPI_Comm_rank(comm_cart, &rank);
   int my_coords[2];
   MPI_Cart_coords(comm_cart, rank, 2, my_coords);
   printf("[MPI process %d] I am located at (%d, %d).\n", rank, my_coords[0],my_coords[1]);
