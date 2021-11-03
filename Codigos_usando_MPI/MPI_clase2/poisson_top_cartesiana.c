@@ -151,8 +151,8 @@ int main(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD , &size);
 
   int m,n;
-  m = M/size;
-  n = N/size;
+  m = M/(size/2);
+  n = N/(size/2);
 
   // Creación del comunicador cartesiano
   int dims[2] = {0,0};
