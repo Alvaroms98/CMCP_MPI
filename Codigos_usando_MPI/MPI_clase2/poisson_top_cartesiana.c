@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     }
   }
   else{
-    MPI_Send(&x[1*ld+1],1,bloque,0,0,comm_cart);
+    MPI_Send(&x[1*ld+1],n*m,MPI_DOUBLE,0,0,comm_cart);
   }
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
