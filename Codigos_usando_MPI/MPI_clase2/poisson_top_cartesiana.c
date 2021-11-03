@@ -130,8 +130,8 @@ void jacobi_poisson(int N,int M,double *x,double *b, MPI_Comm * comm_cart)
 
 int main(int argc, char **argv)
 {
-  int i, j, N=50, M=40, ld;
-  double *x, *b, h=0.01, f=1.5;
+  int i, j, N=40, M=40, ld;
+  double *x, *b, *sol, h=0.01, f=1.5;
 
   /* Extracción de argumentos */
   if (argc > 1) { /* El usuario ha indicado el valor de N */
@@ -161,15 +161,15 @@ int main(int argc, char **argv)
   MPI_Cart_create( MPI_COMM_WORLD , 2 , dims , periods , reorder , &comm_cart);
 
 
-  ld = M+2;  /* leading dimension */
+  ld = m+2;  /* leading dimension */
 
   /* Reserva de memoria */
   x = (double*)calloc((n+2)*(m+2),sizeof(double));
   b = (double*)calloc((n+2)*(m+2),sizeof(double));
 
   /* Inicializar datos */
-  for (i=1; i<=N; i++) {
-    for (j=1; j<=M; j++) {
+  for (i=1; i<=n; i++) {
+    for (j=1; j<=m; j++) {
       b[i*ld+j] = h*h*f;  /* suponemos que la función f es constante en todo el dominio */
     }
   }
@@ -177,13 +177,40 @@ int main(int argc, char **argv)
   /* Resolución del sistema por el método de Jacobi */
   jacobi_poisson(n,m,x,b,&comm_cart);
 
-  /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
-  for (i=1; i<=N; i++) {
-    for (j=1; j<=M; j++) {
-      printf("%g ", x[i*ld+j]);
-    }
-    printf("\n");
-  }
+
+  /* Recogida de la soliución en máster */
+  int rank;
+  MPI_Comm_rank(*comm_cart, &rank);
+  int my_coords[2];
+  MPI_Cart_coords(comm_cart, rank, 2, my_coords);
+  printf("[MPI process %d] I am located at (%d, %d).\n", rank, my_coords[0],my_coords[1]);
+  // Identificamos los vecinos de la malla
+
+  // enum DIRS {DOWN, UP, LEFT, RIGHT};
+  // int neighbours_ranks[4];
+
+  // MPI_Cart_shift( *comm_cart , 0 , 1 , &neighbours_ranks[LEFT] , &neigthbours_ranks[RIGHT]);
+  // MPI_Cart_shift( *comm_cart , 1 , 1 , &neighbours_ranks[DOWN] , &neigthbours_ranks[UP]);
+
+  // // Creamos el tipo para cuando mandemos columnas a la derecha e izquierda
+  // MPI_Datatype columna;
+  // MPI_Type_vector( n , 1 , ld , MPI_DOUBLE , &columna);
+  // MPI_Type_commit( &columna);
+
+  // MPI_Datatype columna_resized;
+  // MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
+  // MPI_Type_commit( &columna_resized);
+
+  // sol = (double*)calloc(N*M,sizeof(double));
+  // // Creamos el tipo para la recepción
+
+  // /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
+  // for (i=1; i<=N; i++) {
+  //   for (j=1; j<=M; j++) {
+  //     printf("%g ", x[i*ld+j]);
+  //   }
+  //   printf("\n");
+  // }
 
   free(x);
   free(b);
