@@ -202,15 +202,15 @@ int main(int argc, char **argv)
       switch (next)
       {
         case 1:
-          MPI_Recv(&sol[0*M+0],1,bloque_sol,next,0,comm_cart);
+          MPI_Recv(&sol[0*M+0],1,bloque_sol,next,0,comm_cart,MPI_STATUS_IGNORE);
           break;
         
         case 2:
-          MPI_Recv(&sol[n*M+m],1,bloque_sol,next,0,comm_cart);
+          MPI_Recv(&sol[n*M+m],1,bloque_sol,next,0,comm_cart,MPI_STATUS_IGNORE);
           break;
 
         case 3:
-          MPI_Recv(&sol[0*M+m],1,bloque_sol,next,0,comm_cart);
+          MPI_Recv(&sol[0*M+m],1,bloque_sol,next,0,comm_cart,MPI_STATUS_IGNORE);
           break;
         
         default:
