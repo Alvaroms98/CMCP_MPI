@@ -205,13 +205,16 @@ int main(int argc, char **argv)
   
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
-  ld = M;
-  for (i=1; i<=N; i++) {
-    for (j=1; j<=M; j++) {
-      printf("%g ", x[i*ld+j]);
+  if (!rank){
+    ld = M;
+    for (i=1; i<=N; i++) {
+      for (j=1; j<=M; j++) {
+        printf("%g ", x[i*ld+j]);
+      }
+      printf("\n");
     }
-    printf("\n");
   }
+ 
 
   MPI_Type_free(&bloque);
   MPI_Type_free(&bloque_sol);
