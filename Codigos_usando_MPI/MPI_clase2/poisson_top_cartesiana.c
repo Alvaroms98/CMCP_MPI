@@ -195,14 +195,38 @@ int main(int argc, char **argv)
   MPI_Type_vector(n,m,M,MPI_DOUBLE,&bloque_sol);
 
   sol = (double*)calloc(N*M,sizeof(double));
+  /* Comunicación punto a punto */
+  if (!rank){
+    int next = rank + 1;
+    for (int i=1; i<size; i++){
+      switch (next)
+      {
+        case 1:
+          MPI_Recv(&sol[0*M+0],1,bloque_sol,next,0,comm_cart);
+          break;
+        
+        case 2:
+          MPI_Recv(&sol[n*M+m],1,bloque_sol,next,0,comm_cart);
+          break;
 
-  if (my_coords[1]==1)
-    MPI_Gather(&x[1*ld+1], 1, bloque, &sol[0*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
-  else
-    MPI_Gather(&x[1*ld+1], 1, bloque, &sol[n*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
-
-
-  
+        case 3:
+          MPI_Recv(&sol[0*M+m],1,bloque_sol,next,0,comm_cart);
+          break;
+        
+        default:
+          break;
+      }
+    next++;
+    }
+    for (int i=1; i<=n; i++){
+      for (int j=1; j<=m; j++){
+        sol[(i+n-1)*M+j-1] = x[i*ld+j];
+      }
+    }
+  }
+  else{
+    MPI_Send(&x[1*ld+1],1,bloque,0,0,comm_cart);
+  }
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
   if (!rank){
