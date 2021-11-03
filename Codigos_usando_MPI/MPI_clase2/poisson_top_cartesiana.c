@@ -187,36 +187,37 @@ int main(int argc, char **argv)
   int my_coords[2];
   MPI_Cart_coords(comm_cart, rank, 2, my_coords);
   printf("[MPI process %d] I am located at (%d, %d).\n", rank, my_coords[0],my_coords[1]);
-  // Identificamos los vecinos de la malla
 
-  // enum DIRS {DOWN, UP, LEFT, RIGHT};
-  // int neighbours_ranks[4];
+  // Creamos tipo de dato bloque entero
+  MPI_Datatype bloque, bloque_sol;
+  MPI_Type_vector(n,m,ld,MPI_DOUBLE,&bloque);
+  MPI_Type_commit(&bloque);
+  MPI_Type_vector(n,m,M,MPI_DOUBLE,&bloque_sol);
 
-  // MPI_Cart_shift( *comm_cart , 0 , 1 , &neighbours_ranks[LEFT] , &neigthbours_ranks[RIGHT]);
-  // MPI_Cart_shift( *comm_cart , 1 , 1 , &neighbours_ranks[DOWN] , &neigthbours_ranks[UP]);
+  sol = (double*)calloc(N*M,sizeof(double));
 
-  // // Creamos el tipo para cuando mandemos columnas a la derecha e izquierda
-  // MPI_Datatype columna;
-  // MPI_Type_vector( n , 1 , ld , MPI_DOUBLE , &columna);
-  // MPI_Type_commit( &columna);
+  if (my_coords[1]==1)
+    MPI_Gather(&x[1*ld+1], 1, bloque, sol[0*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
+  else
+    MPI_Gather(&x[1*ld+1], 1, bloque, sol[n*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
 
-  // MPI_Datatype columna_resized;
-  // MPI_Type_create_resized( columna , 0 , sizeof(double) , &columna_resized);
-  // MPI_Type_commit( &columna_resized);
 
-  // sol = (double*)calloc(N*M,sizeof(double));
-  // // Creamos el tipo para la recepción
+  
 
-  // /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
-  // for (i=1; i<=N; i++) {
-  //   for (j=1; j<=M; j++) {
-  //     printf("%g ", x[i*ld+j]);
-  //   }
-  //   printf("\n");
-  // }
+  /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
+  ld = M;
+  for (i=1; i<=N; i++) {
+    for (j=1; j<=M; j++) {
+      printf("%g ", x[i*ld+j]);
+    }
+    printf("\n");
+  }
 
+  MPI_Type_free(&bloque);
+  MPI_Type_free(&bloque_sol);
   free(x);
   free(b);
+  free(sol);
 
   MPI_Finalize();
   return 0;
