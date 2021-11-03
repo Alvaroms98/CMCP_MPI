@@ -193,7 +193,7 @@ int main(int argc, char **argv)
   MPI_Type_vector(n,m,ld,MPI_DOUBLE,&bloque);
   MPI_Type_commit(&bloque);
   MPI_Type_vector(n,m,M,MPI_DOUBLE,&bloque_sol);
-
+  MPI_Type_commit(&bloque_sol);
   sol = (double*)calloc(N*M,sizeof(double));
   /* Comunicación punto a punto */
   if (!rank){
