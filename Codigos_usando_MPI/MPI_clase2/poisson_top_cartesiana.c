@@ -197,9 +197,9 @@ int main(int argc, char **argv)
   sol = (double*)calloc(N*M,sizeof(double));
 
   if (my_coords[1]==1)
-    MPI_Gather(&x[1*ld+1], 1, bloque, sol[0*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
+    MPI_Gather(&x[1*ld+1], 1, bloque, &sol[0*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
   else
-    MPI_Gather(&x[1*ld+1], 1, bloque, sol[n*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
+    MPI_Gather(&x[1*ld+1], 1, bloque, &sol[n*M+m*my_coords[0]],1,bloque_sol,0,comm_cart);
 
 
   
