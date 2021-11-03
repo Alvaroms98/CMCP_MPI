@@ -195,6 +195,13 @@ int main(int argc, char **argv)
   MPI_Type_vector(n,m,M,MPI_DOUBLE,&bloque_sol);
   MPI_Type_commit(&bloque_sol);
   sol = (double*)calloc(N*M,sizeof(double));
+
+ for (i=1; i<=n; i++) {
+    for (j=1; j<=m; j++) {
+      printf("[MPI process %d]: %f\n",rank,x[i*ld+j]);
+    }
+  }
+
   /* Comunicación punto a punto */
   if (!rank){
     int next = rank + 1;
@@ -225,7 +232,7 @@ int main(int argc, char **argv)
     }
   }
   else{
-    MPI_Send(&x[1*ld+1],n*m,MPI_DOUBLE,0,0,comm_cart);
+    MPI_Send(&x[1*ld+1],1,bloque,0,0,comm_cart);
   }
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
