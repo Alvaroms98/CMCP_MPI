@@ -194,6 +194,7 @@ int main(int argc, char **argv)
   MPI_Type_commit(&bloque);
   MPI_Type_vector(n,m,M,MPI_DOUBLE,&bloque_sol);
   MPI_Type_commit(&bloque_sol);
+
   sol = (double*)calloc(N*M,sizeof(double));
 
  for (i=1; i<=n; i++) {
@@ -234,9 +235,9 @@ int main(int argc, char **argv)
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
   if (!rank){
     ld = M;
-    for (i=1; i<=N; i++) {
-      for (j=1; j<=M; j++) {
-        printf("%g ", x[i*ld+j]);
+    for (i=0; i<N; i++) {
+      for (j=0; j<M; j++) {
+        printf("%g ", sol[i*ld+j]);
       }
       printf("\n");
     }
