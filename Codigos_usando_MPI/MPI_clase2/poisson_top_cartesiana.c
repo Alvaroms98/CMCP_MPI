@@ -235,14 +235,17 @@ int main(int argc, char **argv)
   ld = M;
   double *temp = (double*)calloc(M,sizeof(double));
 
-  for (i = 0, k = N-1; i<N/2; i++){
-    for (j = 0; j<M; j++){
-      temp[j] = sol[i*ld + j];
-      sol[i*ld + j] = sol[k*ld + j];
-      sol[k*ld + j] = temp[j];
+  if (!rank){
+    for (i = 0, k = N-1; i<N/2; i++){
+      for (j = 0; j<M; j++){
+        temp[j] = sol[i*ld + j];
+        sol[i*ld + j] = sol[k*ld + j];
+        sol[k*ld + j] = temp[j];
+      }
+      k--;
     }
-    k--;
   }
+
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
   if (!rank){
