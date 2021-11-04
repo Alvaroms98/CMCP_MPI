@@ -181,7 +181,7 @@ int main(int argc, char **argv)
   jacobi_poisson(n,m,x,b,&comm_cart);
 
 
-  /* Recogida de la soliución en máster */
+  /* Recogida de la solución en máster */
   int rank;
   MPI_Comm_rank(comm_cart, &rank);
   int my_coords[2];
@@ -202,38 +202,34 @@ int main(int argc, char **argv)
     }
   }
 
+  int rank_cart;
+  int coods_cart[2];
   /* Comunicación punto a punto */
   if (!rank){
-    int next = rank + 1;
-    for (int i=1; i<size; i++){
-      switch (next)
-      {
-        case 1:
-          MPI_Recv(&sol[0*M+0],1,bloque_sol,next,0,comm_cart,MPI_STATUS_IGNORE);
-          break;
-        
-        case 2:
-          MPI_Recv(&sol[n*M+m],1,bloque_sol,next,0,comm_cart,MPI_STATUS_IGNORE);
-          break;
+    for (int i = 0; i<dims[0]; i++){
+      for (int j = 0; j<dims[1]; j++){
+        // Para la coordenada (0,0), es decirm rank = 0
+        if (i == 0 && j == 0){
+          for (int k=1; k<=n; k++){
+            for (int p=1; p<=m; p++){
+              sol[(k-1)*M+p-1] = x[k*ld+p];
+            }
+          }
+        }
+        else{
+          coods_cart[0] = i;
+          coods_cart[1] = j;
+          MPI_Cart_rank(comm_cart, coods_cart, &rank_cart);
+          MPI_Recv(&sol[j*n*M + i*m],1,bloque_sol,rank_cart,0,comm_cart,MPI_STATUS_IGNORE);
+        }
 
-        case 3:
-          MPI_Recv(&sol[0*M+m],1,bloque_sol,next,0,comm_cart,MPI_STATUS_IGNORE);
-          break;
-        
-        default:
-          break;
-      }
-    next++;
-    }
-    for (int i=1; i<=n; i++){
-      for (int j=1; j<=m; j++){
-        sol[(i+n-1)*M+j-1] = x[i*ld+j];
       }
     }
   }
   else{
     MPI_Send(&x[1*ld+1],1,bloque,0,0,comm_cart);
   }
+
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
   if (!rank){
