@@ -202,6 +202,7 @@ int main(int argc, char **argv)
 //       printf("[MPI process %d]: %f\n",rank,x[i*ld+j]);
 //     }
 //   }
+  MPI_Cart_rank(comm_cart, my_coords, &rank);
 
   int rank_cart;
   int coods_cart[2];
