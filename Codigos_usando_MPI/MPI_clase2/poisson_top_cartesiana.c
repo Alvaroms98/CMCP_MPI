@@ -186,7 +186,7 @@ int main(int argc, char **argv)
   MPI_Comm_rank(comm_cart, &rank);
   int my_coords[2];
   MPI_Cart_coords(comm_cart, rank, 2, my_coords);
-  printf("[MPI process %d] I am located at (%d, %d).\n", rank, my_coords[0],my_coords[1]);
+  //printf("[MPI process %d] I am located at (%d, %d).\n", rank, my_coords[0],my_coords[1]);
 
   // Creamos tipo de dato bloque entero
   MPI_Datatype bloque, bloque_sol;
@@ -197,11 +197,11 @@ int main(int argc, char **argv)
 
   sol = (double*)calloc(N*M,sizeof(double));
 
- for (i=1; i<=n; i++) {
-    for (j=1; j<=m; j++) {
-      printf("[MPI process %d]: %f\n",rank,x[i*ld+j]);
-    }
-  }
+//  for (i=1; i<=n; i++) {
+//     for (j=1; j<=m; j++) {
+//       printf("[MPI process %d]: %f\n",rank,x[i*ld+j]);
+//     }
+//   }
 
   int rank_cart;
   int coods_cart[2];
@@ -230,11 +230,22 @@ int main(int argc, char **argv)
   else{
     MPI_Send(&x[1*ld+1],1,bloque,0,0,comm_cart);
   }
+  /* El problema de este envío es que la matriz se reconstruye del reves, hay que cambiar las
+     filas de arriba por las filas de abajo */
+  ld = M;
+  double *temp = (double*)calloc(M,sizeof(double));
 
+  for (i = 0, k = N-1; i<N/2; i++){
+    for (j = 0; j<M; j++){
+      temp[j] = sol[i*ld + j];
+      sol[i*ld + j] = sol[k*ld + j];
+      sol[k*ld + j] = temp[j];
+    }
+    k--;
+  }
 
   /* Imprimir solución (solo para comprobación, eliminar en el caso de problemas grandes) */
   if (!rank){
-    ld = M;
     for (i=0; i<N; i++) {
       for (j=0; j<M; j++) {
         printf("%g ", sol[i*ld+j]);
@@ -249,6 +260,7 @@ int main(int argc, char **argv)
   free(x);
   free(b);
   free(sol);
+  free(temp);
 
   MPI_Finalize();
   return 0;
